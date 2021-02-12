@@ -16,3 +16,10 @@ What, When, Who, Where
 
 ### Where
 * Where can I buy [unpurchasable-things]? [unpurchasable-things] is purchasable
+
+
+Mix and Match
+=============
+* When did [murderer] kill [murdered]?
+* When did [inventor] invent [gadget]?
+* Who let the [dogs] out? [Who] [who] [who]
