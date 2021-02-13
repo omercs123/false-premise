@@ -1,7 +1,7 @@
 # Project Roadmap
-1. Create dataset containing questions with a false premise.
-    * Manually create question templates.
-    * Programmatically populate questions (using sparql).
+1. Create dataset containing questions with a false premise. ✔️
+    * Manually create question templates. ✔️
+    * Programmatically populate questions (using sparql). ✔️
 
 2. Omer creates ML AI Deep Learning Super Duper Quantum model.
    Given a question the model will check if there is a false premise. If there is - answer "unanswerable".
