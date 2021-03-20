@@ -34,12 +34,13 @@ def murder_query():
     Use with caution.
     '''
     return """
-    SELECT ?dead ?deadLabel ?kill ?killLabel
+    SELECT ?dead ?deadLabel ?kill ?killLabel ?date ?dateLabel
     WHERE {
         ?dead wdt:P157 ?kill.
         ?kill wdt:P31 wd:Q5.
+        ?dead wdt:P570 ?date
         SERVICE wikibase:label { bd:serviceParam wikibase:language "[AUTO_LANGUAGE],en". }
-    } LIMIT 30
+    } LIMIT 2
     """
 
 
@@ -111,15 +112,29 @@ entities = [
 mix_entities = [
     # (["inventor", "gadget"], inventor_query(),
     #  ["When did <inventor> invent <gadget>?"]),
-    (["dead", "kill"], murder_query(), [
-     "When did <kill> murder <dead>?",
-     "Where did <kill> murder <dead>?",
-     "How did <kill> murder <dead>?",
-     "Why did <kill> murder <dead>?"]),
+    #(["dead", "kill"], murder_query(), [
+    # "When did <kill> murder <dead>?",
+    # "Where did <kill> murder <dead>?",
+    # "How did <kill> murder <dead>?",
+    # "Why did <kill> murder <dead>?"]),
+    {
+        "labels": ["dead", "kill", "date"],
+        "query": murder_query(),
+        "questions":
+        [
+            {
+                "q": "When did <kill> murder <dead>?",
+                "a": "Unanswerable",
+                "prem_q": "Did <kill> murder <dead>?",
+                "prem_a": "No",
+                "wikipage": "<dead>"
+            }
+        ]
+    },
 ]
 
 
-def generate_false_question():
+def generate_false_questions():
     questions = []
     for (es, query, qs) in entities:
         res = return_sparql_query_results(query)
@@ -144,7 +159,10 @@ def generate_false_question():
 def generate_mix_questions():
     from collections import defaultdict
     questions = []
-    for (es, query, qs) in mix_entities:
+    for entity in mix_entities:
+        es = entity['labels']
+        query = entity['query']
+        qs = entity['questions']
         res = return_sparql_query_results(query)
         res = res['results']['bindings']
         values = defaultdict(list)
@@ -155,9 +173,10 @@ def generate_mix_questions():
             for ind, j in enumerate(values[es[0]]):
                 if j != i:
                     for q in qs:
-                        question = q.replace(f'<{es[0]}>', i).replace(
-                            f'<{es[1]}>', values[es[1]][ind])
-                        questions.append(question)
+                        q['q'] = q['q'].replace(f'<{es[0]}>', i).replace(f'<{es[1]}>', values[es[1]][ind])
+                        q['prem_q'] = q['prem_q'].replace(f'<{es[0]}>', i).replace(f'<{es[1]}>', values[es[1]][ind])
+                        q['wikipage'] = q['wikipage'].replace(f'<{es[0]}>', i).replace(f'<{es[1]}>', values[es[1]][ind])
+                        questions.append(q)
 
         # for val in values:
         #     for q in qs:
