@@ -1,4 +1,6 @@
+import json
 import qwikidata
+import wikipediaapi
 from qwikidata.sparql import (get_subclasses_of_item,
                               return_sparql_query_results)
 from qwikidata.linked_data_interface import get_entity_dict_from_api
@@ -40,7 +42,7 @@ def murder_query():
         ?kill wdt:P31 wd:Q5.
         ?dead wdt:P570 ?date
         SERVICE wikibase:label { bd:serviceParam wikibase:language "[AUTO_LANGUAGE],en". }
-    } LIMIT 2
+    } LIMIT 4
     """
 
 
@@ -118,16 +120,16 @@ mix_entities = [
     # "How did <kill> murder <dead>?",
     # "Why did <kill> murder <dead>?"]),
     {
-        "labels": ["dead", "kill", "date"],
+        "labels": ["kill", "dead", "date"],
         "query": murder_query(),
         "questions":
         [
             {
-                "q": "When did <kill> murder <dead>?",
-                "a": "Unanswerable",
-                "prem_q": "Did <kill> murder <dead>?",
-                "prem_a": "No",
+                "question": "did <kill> murder <dead>",
+                "answer": False,
+                "title": "<dead>",
                 "wikipage": "<dead>"
+
             }
         ]
     },
@@ -158,7 +160,10 @@ def generate_false_questions():
 
 def generate_mix_questions():
     from collections import defaultdict
+    import copy
+    wiki_wiki = wikipediaapi.Wikipedia('en')
     questions = []
+    titles = {}
     for entity in mix_entities:
         es = entity['labels']
         query = entity['query']
@@ -168,22 +173,30 @@ def generate_mix_questions():
         values = defaultdict(list)
         for entity in res:
             for e in es:
-                values[e] += [entity[f'{e}Label']['value']]
+                name = entity[f'{e}Label']['value']
+                values[e] += [name]
+                q_id = entity[f'{e}']['value'].split('/')[-1]
+                if not q_id.startswith('Q'):
+                    continue
+                item = WikidataItem(get_entity_dict_from_api(q_id))
+                try:
+                    titles[name] = item.get_enwiki_title()
+                except KeyError:
+                    pass
+
         for i in values[es[0]]:
             for ind, j in enumerate(values[es[0]]):
                 if j != i:
                     for q in qs:
-                        q['q'] = q['q'].replace(f'<{es[0]}>', i).replace(f'<{es[1]}>', values[es[1]][ind])
-                        q['prem_q'] = q['prem_q'].replace(f'<{es[0]}>', i).replace(f'<{es[1]}>', values[es[1]][ind])
-                        q['wikipage'] = q['wikipage'].replace(f'<{es[0]}>', i).replace(f'<{es[1]}>', values[es[1]][ind])
-                        questions.append(q)
-
-        # for val in values:
-        #     for q in qs:
-        #         question = q
-        #         for (k, v) in val.items():
-        #             question = question.replace(f'<{k}>', v)
-        #         questions.append(question)
+                        new_q = copy.deepcopy(q)
+                        new_q['question'] = q['question'].replace(f'<{es[0]}>', i).replace(f'<{es[1]}>', values[es[1]][ind])
+                        try:
+                            new_q['title'] = titles[values[es[1]][ind]] 
+                            page = wiki_wiki.page(new_q['title'])
+                            new_q['wikipage'] = page.summary
+                            questions.append(new_q)
+                        except KeyError:
+                            pass
 
     return questions
 
@@ -192,19 +205,25 @@ if __name__ == "__main__":
     # send any sparql query to the wikidata query service and get full result back
     # here we use an example that counts the number of humans
 
-    questions = generate_false_question()
-    questions += generate_mix_questions()
+    # questions = generate_false_questions()
+    questions = generate_mix_questions()
 
     print(questions)
+    with open('questions.json', 'w') as f:
+        json.dump(questions, f)
     exit(1)
 
     # use convenience function to get subclasses of an item as a list of item ids
     Q_RIVER = "Q4022"
     subclasses_of_river = get_subclasses_of_item(Q_RIVER)
 
-    print(subclasses_of_river)
+    #print(subclasses_of_river)
 
     for subclass in subclasses_of_river:
         entity = get_entity_dict_from_api(subclass)
         item = WikidataItem(entity)
-        print(item.get_enwiki_title())
+        # print(item.get_enwiki_title())
+        try:
+            print(item.get_sitelinks()['enwiki']['url'])
+        except KeyError:
+            pass

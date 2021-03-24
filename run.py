@@ -10,7 +10,7 @@ Rabin served as Israel's ambassador to the United States from 1968 to 1973, duri
 In 1992, Rabin was re-elected as prime minister on a platform embracing the Israeli–Palestinian peace process. He signed several historic agreements with the Palestinian leadership as part of the Oslo Accords. In 1994, Rabin won the Nobel Peace Prize together with long-time political rival Shimon Peres and Palestinian leader Yasser Arafat. Rabin also signed a peace treaty with Jordan in 1994. In November 1995, he was assassinated by an extremist named Yigal Amir, who opposed the terms of the Oslo Accords. Amir was convicted of Rabin's murder and sentenced to life imprisonment. Rabin was the first native-born prime minister of Israel, the only prime minister to be assassinated and the second to die in office after Levi Eshkol. Rabin has become a symbol of the Israeli–Palestinian peace process.
 """
 context = "In November 1995, he was assassinated by an extremist named Yigal Amir, who opposed the terms of the Oslo Accords."
-question = "When did Rabin commit suicide?"
-res = question_answerer({'question': question, 'context': context})
+question = "Did Carles puyol commit suicide?"
+res = question_answerer({'question': question, 'context': context}, handle_impossible_answer=True)
 
 print(res)
