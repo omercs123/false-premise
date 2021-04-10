@@ -10,3 +10,5 @@ $ python dataset.py
 
 This will create two files - `train.jsonl` and `dev.jsonl`.
 Those can be used with the provided jupyter notebook to train a question answering model.
+
+A premade dataset is provided in `trainmix6500b.jsonl` and `devmix6500b.jsonl`.
