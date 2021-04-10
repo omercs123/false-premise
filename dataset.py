@@ -251,9 +251,9 @@ if __name__ == "__main__":
     questions_len = len(questions)
     random.shuffle(questions)
 
-    with jsonlines.open('trainmix6500b.jsonl', 'w') as f:
+    with jsonlines.open('train.jsonl', 'w') as f:
         f.write_all(questions[:int(questions_len * 0.8)])
-    with jsonlines.open('devmix6500b.jsonl', 'w') as f:
+    with jsonlines.open('dev.jsonl', 'w') as f:
         f.write_all(questions[int(questions_len * 0.8):])
 
 
