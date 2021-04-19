@@ -14,6 +14,7 @@ from qwikidata.entity import WikidataItem
 
 
 def father_occupation_query():
+    # father-children who have different occupation
     return """
     SELECT DISTINCT ?person_label ?father_label ?fatherOccupation_label 
     WHERE
@@ -37,6 +38,7 @@ def father_occupation_query():
     """
 
 def child_occupation_query():
+    # father-children who have different occupation
     return """
     SELECT DISTINCT ?person_label ?father_label ?personOccupation_label 
     WHERE
@@ -57,6 +59,7 @@ def child_occupation_query():
     """
 
 def spouse_occupation_query():
+    # spouses who have different occupation
     return """
     SELECT DISTINCT ?person_label ?spouse_label ?spouseOccupation_label
     WHERE
@@ -83,7 +86,6 @@ def spouse_occupation_query():
 
 def non_murdered_father_query():
     # fathers who were not killed of a person who was killed, killers and the person they have killed
-    # 203
     return """
     SELECT DISTINCT ?person_label ?father_label ?personKiller_label
     WHERE
@@ -102,8 +104,134 @@ def non_murdered_father_query():
     } LIMIT 203
     """
 
+def non_director_spouse_query():
+    # spouses that did not direct a movie that their spouse did
+    return """
+    SELECT DISTINCT ?person_label ?spouse_label ?work_label
+    WHERE
+    {
+    FILTER regex (str(?person), ("Q0|Q2|Q4|Q6|Q8")).
+    FILTER regex (str(?spouse), ("Q1|Q3|Q5|Q7|Q9")).
+    ?person wdt:P31 wd:Q5.
+    ?work wdt:P57 ?person.
+    ?work wdt:P31/wdt:P279* wd:Q11424.
+    ?person wdt:P26 ?spouse.
+    ?spouse wdt:P26 ?person.
+    ?person rdfs:label ?person_label.
+    ?spouse rdfs:label ?spouse_label.
+    ?work rdfs:label ?work_label
+    FILTER(LANG(?person_label) = "en").
+    FILTER(LANG(?spouse_label) = "en").
+    FILTER(LANG(?work_label) = "en").
+    FILTER NOT EXISTS {?work wdt:P57 ?spouse.}.
+    } LIMIT 500
+    """
+
+def non_painter_spouse_query():
+    # spouses that did not paint a painting that their spouse did
+    return """
+    SELECT DISTINCT ?person_label ?spouse_label ?work_label
+    WHERE
+    {
+    FILTER regex (str(?person), ("Q0|Q2|Q4|Q6|Q8")).
+    FILTER regex (str(?spouse), ("Q1|Q3|Q5|Q7|Q9")).
+    ?person wdt:P31 wd:Q5.
+    ?work wdt:P170 ?person.
+    ?work wdt:P31/wdt:P279* wd:Q3305213.
+    ?person wdt:P26 ?spouse.
+    ?spouse wdt:P26 ?person.
+    ?person rdfs:label ?person_label.
+    ?spouse rdfs:label ?spouse_label.
+    ?work rdfs:label ?work_label
+    FILTER(LANG(?person_label) = "en").
+    FILTER(LANG(?spouse_label) = "en").
+    FILTER(LANG(?work_label) = "en").
+    FILTER NOT EXISTS {?work wdt:P170 ?spouse.}.
+    } LIMIT 500
+    """
+
+def non_author_spouse_query():
+    # spouses that did not write a book that their spouse did
+    return """
+    SELECT DISTINCT ?person_label ?spouse_label ?work_label
+    WHERE
+    {
+    FILTER regex (str(?person), ("Q0|Q2|Q4|Q6|Q8")).
+    FILTER regex (str(?spouse), ("Q1|Q3|Q5|Q7|Q9")).
+    ?person wdt:P31 wd:Q5.
+    ?work wdt:P50 ?person.
+    ?work wdt:P31/wdt:P279* wd:Q571.
+    ?person wdt:P26 ?spouse.
+    ?spouse wdt:P26 ?person.
+    ?person rdfs:label ?person_label.
+    ?spouse rdfs:label ?spouse_label.
+    ?work rdfs:label ?work_label
+    FILTER(LANG(?person_label) = "en").
+    FILTER(LANG(?spouse_label) = "en").
+    FILTER(LANG(?work_label) = "en").
+    FILTER NOT EXISTS {?work wdt:P50 ?spouse.}.
+    } LIMIT 500
+    """
+
 
 switch_entities = [
+    {
+        "labels": ["person_label", "spouse_label", "work_label",],
+        "query": non_director_spouse_query(),
+        "questions":
+        [
+            {
+                "question": "was <work_label> directed by <spouse_label>",
+                "answer": False,
+                "title": "<work_label> and <spouse_label>",
+                "passage": ""
+            },
+            {
+                "question": "was <work_label> directed by <person_label>",
+                "answer": True,
+                "title": "<work_label> and <person_label>",
+                "passage": ""
+            }
+        ]
+    },
+    {
+        "labels": ["person_label", "spouse_label", "work_label",],
+        "query": non_painter_spouse_query(),
+        "questions":
+        [
+            {
+                "question": "was <work_label> painted by <spouse_label>",
+                "answer": False,
+                "title": "<work_label> and <spouse_label>",
+                "passage": ""
+            },
+            {
+                "question": "was <work_label> painted by <person_label>",
+                "answer": True,
+                "title": "<work_label> and <person_label>",
+                "passage": ""
+            }
+        ]
+    },
+    {
+        "labels": ["person_label", "spouse_label", "work_label",],
+        "query": non_author_spouse_query(),
+        "questions":
+        [
+            {
+                "question": "was <work_label> written by <spouse_label>",
+                "answer": False,
+                "title": "<work_label> and <spouse_label>",
+                "passage": ""
+            },
+            {
+                "question": "was <work_label> written by <person_label>",
+                "answer": True,
+                "title": "<work_label> and <person_label>",
+                "passage": ""
+            }
+        ]
+    },
     {
         "labels": ["person_label", "father_label", "personKiller_label",],
         "query": non_murdered_father_query(),
@@ -234,17 +362,6 @@ def generate_switch():
 
 
 if __name__ == "__main__":
-    # send any sparql query to the wikidata query service and get full result back
-    # here we use an example that counts the number of humans
-    # use convenience function to get subclasses of an item as a list of item ids
-
-    import wikipediaapi
-    wiki_wiki = wikipediaapi.Wikipedia('en')
-    page1 = wiki_wiki.page('Bill Gates')
-    text1 = page1.summary
-    print(text1.split())
-    print(len(text1.split()))
-    exit(1) 
 
     questions = generate_switch()
 
